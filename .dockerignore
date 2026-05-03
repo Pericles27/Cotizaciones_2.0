@@ -1,0 +1,26 @@
+node_modules
+**/node_modules
+**/dist
+**/build
+**/.turbo
+**/.next
+
+.git
+.github
+.vscode
+.idea
+
+.env
+**/.env
+**/.env.local
+**/.env.*.local
+
+legacy
+README.md
+*.md
+.DS_Store
+
+# necesitamos algunas cosas igual:
+!apps/api/.env.example
+!packages
+!apps/api

@@ -1,0 +1,20 @@
+const Acciones =[
+    {value:"AAPL"},
+    {value:"AMZN"},
+    {value:"BLK"},
+    {value:"CVX"},
+    {value:"DIS"},
+    {value:"EBAY"},
+    {value:"GOLD"},
+    {value:"META"},
+    {value:"MS"},    
+    {value:"NFLX"},
+    {value:"GS"},
+    {value:"JPM"},
+    {value:"NVDA"},
+    {value:"INTC"},
+    {value:"AXP"},
+    {value:"LOMA"},
+    {value:"MIRG"},
+]
+export default Acciones

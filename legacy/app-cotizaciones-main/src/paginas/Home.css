@@ -1,0 +1,17 @@
+.contenedor{
+    /*background-color:#524848 ;*/
+    height: 2000px;
+}
+.flex-container{
+    width: 100%;
+    height: fit-content;
+}
+.dark-mode .contenedor{
+    background-color:white !important;
+    height: 2000px;
+}
+@media only screen and (max-width: 590px) {
+    .contenedor {
+      padding-top:100px !important;
+    }
+}

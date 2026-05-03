@@ -1,0 +1,38 @@
+# Netlify deploy config para apps/web (Vite + React).
+# El backend (apps/api) se deploya por separado en Fly.io / Railway.
+
+[build]
+  base    = "."
+  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cotizaciones/web build"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION   = "20.18.0"
+  PNPM_VERSION   = "9.15.0"
+  NPM_FLAGS      = "--no-audit --no-fund"
+
+# Fallback para el SPA — todas las rutas resuelven al index.html y el router se encarga.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
+
+# Cache largo para assets versionados de Vite (los nombres incluyen hash).
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# El index.html no se cachea (así toman los nuevos hashes en cada deploy).
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Headers de seguridad básicos.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    X-Frame-Options        = "DENY"

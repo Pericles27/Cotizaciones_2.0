@@ -1,0 +1,19 @@
+@import '@cotizaciones/ui/styles.css';
+
+/*
+ * Tailwind v4 escanea por defecto los .ts/.tsx de la app, pero los componentes
+ * compartidos viven en otro workspace; los declaramos como source extra
+ * para que sus utility classes se incluyan en el build.
+ */
+@source "../../../packages/ui/src/**/*.{ts,tsx}";
+
+/* Hooks de la app que usan los design tokens del package UI. */
+@layer base {
+  body {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 30%, transparent);
+  }
+}

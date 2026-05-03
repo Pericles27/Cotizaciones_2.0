@@ -1,0 +1,36 @@
+# Fly.io config para apps/api.
+# Generar la app la primera vez con:  fly launch --no-deploy --copy-config --name cotizaciones-api
+# Setear secretos (NO commitear):     fly secrets set IOL_USERNAME=... IOL_PASSWORD=...
+# Deploy:                              fly deploy --config apps/api/fly.toml --dockerfile Dockerfile
+
+app            = "cotizaciones-api"
+primary_region = "eze"          # Ezeiza (Buenos Aires) — mejor latencia para usuarios AR
+
+[build]
+  dockerfile = "../../Dockerfile"
+
+[env]
+  NODE_ENV          = "production"
+  PORT              = "3001"
+  CACHE_TTL_SECONDS = "30"
+  # CORS_ORIGIN se setea como secret apuntando al dominio de Netlify
+  # IOL_USERNAME / IOL_PASSWORD también van como secrets
+
+[http_service]
+  internal_port       = 3001
+  force_https         = true
+  auto_stop_machines  = "stop"   # apaga la VM si no hay tráfico (free tier friendly)
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval     = "30s"
+    method       = "GET"
+    path         = "/health"
+    timeout      = "5s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus     = 1
+  memory   = "256mb"
