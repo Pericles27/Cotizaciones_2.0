@@ -9,8 +9,13 @@ ARG PNPM_VERSION=9.15.0
 FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /repo
 
-# pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
+# pnpm via corepack.
+# Actualizamos corepack a la última (la versión que viene con Node 20.x tiene un
+# bug de verificación de firmas: "Cannot find matching keyid"). Una vez updated,
+# habilitamos y fijamos la versión de pnpm.
+RUN npm install -g corepack@latest \
+  && corepack enable \
+  && corepack prepare pnpm@${PNPM_VERSION} --activate
 
 # Instalamos TODO el monorepo (deps de packages/* + apps/api).
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* .npmrc* ./

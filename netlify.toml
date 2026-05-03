@@ -3,7 +3,10 @@
 
 [build]
   base    = "."
-  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cotizaciones/web build"
+  # Updateamos corepack antes de activarlo: la versión que trae Node 20.x tiene
+  # un bug de verificación de firmas ("Cannot find matching keyid") que rompe
+  # `corepack prepare pnpm@...`.
+  command = "npm install -g corepack@latest && corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cotizaciones/web build"
   publish = "apps/web/dist"
 
 [build.environment]
