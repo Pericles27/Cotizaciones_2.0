@@ -2,55 +2,53 @@ import { Hono } from 'hono';
 import type { CryptoBoard, CryptoQuote } from '@cotizaciones/types';
 import { env } from '../env.js';
 import { cachedWithFallback } from '../lib/cache.js';
-import { COIN_NAMES } from '../lib/coin-names.js';
 
-interface BinanceTicker {
+// CoinGecko free API — no key required, no geo-blocking.
+// Returns top 250 coins by market cap with price, 24h change, volume, and market cap.
+const COINGECKO_URL =
+  'https://api.coingecko.com/api/v3/coins/markets' +
+  '?vs_currency=usd&order=market_cap_desc&per_page=250&page=1' +
+  '&sparkline=false&price_change_percentage=24h';
+
+interface CoinGeckoMarket {
+  id: string;
   symbol: string;
-  priceChangePercent: string;
-  lastPrice: string;
-  quoteVolume: string;
-  closeTime: number;
+  name: string;
+  current_price: number;
+  price_change_percentage_24h: number;
+  market_cap: number;
+  total_volume: number;
+  last_updated: string;
+  market_cap_rank: number;
 }
 
-const EXCLUDED_PATTERNS = [/UP$/, /DOWN$/, /BULL$/, /BEAR$/, /^W[A-Z]+$/];
-
-const BINANCE_URL = 'https://api.binance.com/api/v3/ticker/24hr';
-
 async function loadCripto(): Promise<CryptoQuote[] | null> {
-  const res = await fetch(BINANCE_URL);
+  const res = await fetch(COINGECKO_URL, {
+    headers: { Accept: 'application/json' },
+  });
+
   if (!res.ok) {
-    if (res.status === 429 || res.status === 418 || res.status === 503) return null;
-    throw new Error(`binance ${res.status}`);
+    // 429 = rate limited, 503 = down — use cached value if available
+    if (res.status === 429 || res.status === 503) return null;
+    throw new Error(`coingecko ${res.status}`);
   }
-  const all = (await res.json()) as BinanceTicker[];
 
-  const items = all
-    .filter((t) => t.symbol.endsWith('USDT'))
-    .map((t) => ({ raw: t, base: t.symbol.replace(/USDT$/, '') }))
-    .filter(({ base }) => {
-      if (base.length < 2 || base.length > 8) return false;
-      if (EXCLUDED_PATTERNS.some((re) => re.test(base))) return false;
-      return true;
-    })
-    .filter(({ raw }) => Number(raw.quoteVolume) > 0)
-    .map<CryptoQuote & { _vol: number }>(({ raw, base }) => ({
-      symbol: base,
-      name: COIN_NAMES[base] ?? base,
-      priceUsd: Number(raw.lastPrice),
-      changePercent24h: Number(raw.priceChangePercent),
-      marketCapUsd: null,
-      volume24hUsd: Number(raw.quoteVolume),
-      rank: undefined,
-      updatedAt: new Date(raw.closeTime).toISOString(),
-      _vol: Number(raw.quoteVolume),
-    }));
+  const coins = (await res.json()) as CoinGeckoMarket[];
 
-  items.sort((a, b) => b._vol - a._vol);
-  return items.slice(0, 150).map(({ _vol, ...rest }, idx) => ({ ...rest, rank: idx + 1 }));
+  return coins.map<CryptoQuote>((c) => ({
+    symbol: c.symbol.toUpperCase(),
+    name: c.name,
+    priceUsd: c.current_price,
+    changePercent24h: c.price_change_percentage_24h ?? 0,
+    marketCapUsd: c.market_cap ?? null,
+    volume24hUsd: c.total_volume,
+    rank: c.market_cap_rank,
+    updatedAt: c.last_updated,
+  }));
 }
 
 export const cripto = new Hono().get('/', async (c) => {
-  const result = await cachedWithFallback('cripto:binance', env.CACHE_TTL_SECONDS, loadCripto);
+  const result = await cachedWithFallback('cripto:coingecko', env.CACHE_TTL_SECONDS, loadCripto);
   const board: CryptoBoard = {
     items: result.value,
     fetchedAt: result.fetchedAt,
