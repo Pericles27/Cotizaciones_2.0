@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import type { FxBoard, Quote, QuoteList } from '@cotizaciones/types';
-import { env } from '../env';
-import { cachedWithFallback } from '../lib/cache';
-import { iolGet } from '../lib/iol';
-import { isMarketOpen } from '../lib/market';
-import { normalizeIolQuote, type RawIolQuote } from '../lib/normalize';
+import { env } from '../env.js';
+import { cachedWithFallback } from '../lib/cache.js';
+import { iolGet } from '../lib/iol.js';
+import { isMarketOpen } from '../lib/market.js';
+import { normalizeIolQuote, type RawIolQuote } from '../lib/normalize.js';
 
 const MEP_PAIRS: Array<{ pair: string; base: string; usd: string }> = [
   { pair: 'AL30', base: 'AL30', usd: 'AL30D' },

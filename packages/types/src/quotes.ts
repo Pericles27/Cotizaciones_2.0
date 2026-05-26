@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Currency, InstrumentKind, Market } from './instruments';
+import { Currency, InstrumentKind, Market } from './instruments.js';
 
 /**
  * Cotización canónica usada por la app.

@@ -4,13 +4,13 @@ import type { MiddlewareHandler } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { secureHeaders } from 'hono/secure-headers';
-import { env } from './env';
-import { IolNotConfiguredError } from './lib/iol';
-import { rateLimiter } from './lib/rate-limit';
-import { bonos } from './routes/bonos';
-import { acciones } from './routes/acciones';
-import { cripto } from './routes/cripto';
-import { indices } from './routes/indices';
+import { env } from './env.js';
+import { IolNotConfiguredError } from './lib/iol.js';
+import { rateLimiter } from './lib/rate-limit.js';
+import { bonos } from './routes/bonos.js';
+import { acciones } from './routes/acciones.js';
+import { cripto } from './routes/cripto.js';
+import { indices } from './routes/indices.js';
 
 const app = new Hono();
 

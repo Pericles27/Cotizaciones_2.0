@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { IndexBoard, IndexQuote } from '@cotizaciones/types';
-import { env } from '../env';
-import { cachedWithFallback } from '../lib/cache';
+import { env } from '../env.js';
+import { cachedWithFallback } from '../lib/cache.js';
 
 /** Set por defecto de índices que seguimos. */
 const TRACKED: Array<{ symbol: string; name: string; region: IndexQuote['region'] }> = [

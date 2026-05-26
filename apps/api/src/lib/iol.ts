@@ -1,5 +1,5 @@
-import { env } from '../env';
-import { cached, cacheSet } from './cache';
+import { env } from '../env.js';
+import { cached, cacheSet } from './cache.js';
 
 const IOL_BASE = 'https://api.invertironline.com';
 

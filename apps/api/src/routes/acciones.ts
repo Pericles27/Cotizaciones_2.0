@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import type { Quote, QuoteList } from '@cotizaciones/types';
-import { env } from '../env';
-import { cachedWithFallback } from '../lib/cache';
-import { iolGet } from '../lib/iol';
-import { isMarketOpen, type MarketCode } from '../lib/market';
-import { normalizeIolQuote, type RawIolQuote } from '../lib/normalize';
+import { env } from '../env.js';
+import { cachedWithFallback } from '../lib/cache.js';
+import { iolGet } from '../lib/iol.js';
+import { isMarketOpen, type MarketCode } from '../lib/market.js';
+import { normalizeIolQuote, type RawIolQuote } from '../lib/normalize.js';
 
 interface IolPanelResponse {
   titulos: RawIolQuote[];

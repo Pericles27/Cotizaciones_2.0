@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import type { CryptoBoard, CryptoQuote } from '@cotizaciones/types';
-import { env } from '../env';
-import { cachedWithFallback } from '../lib/cache';
-import { COIN_NAMES } from '../lib/coin-names';
+import { env } from '../env.js';
+import { cachedWithFallback } from '../lib/cache.js';
+import { COIN_NAMES } from '../lib/coin-names.js';
 
 interface BinanceTicker {
   symbol: string;

@@ -51,7 +51,7 @@ Click **Deploy**. First build takes ~3 minutes.
 
 Render assigns a URL like:
 ```
-https://cotizaciones-api.onrender.com
+https://cotizaciones-2-0.onrender.com
 ```
 
 Copy it — you'll need it for the frontend.
@@ -59,10 +59,10 @@ Copy it — you'll need it for the frontend.
 ### 2.4 Smoke test
 
 ```bash
-curl https://cotizaciones-api.onrender.com/health
+curl https://cotizaciones-2-0.onrender.com/health
 # {"ok":true,"iol":"configured","auth":"open",...}
 
-curl https://cotizaciones-api.onrender.com/acciones/cedears
+curl https://cotizaciones-2-0.onrender.com/acciones/cedears
 ```
 
 If `/health` returns `ok: true` but `/acciones` returns `503`, check your `IOL_USERNAME` and `IOL_PASSWORD` values in Render → Environment.
@@ -87,7 +87,7 @@ If `/health` returns `ok: true` but `/acciones` returns `503`, check your `IOL_U
 |----------|-------|
 | `VITE_API_BASE_URL` | The Render URL from step 2.3 (no trailing slash) |
 
-Example: `https://cotizaciones-api.onrender.com`
+Example: `https://cotizaciones-2-0.onrender.com`
 
 ### 3.3 Deploy and get the Netlify URL
 
