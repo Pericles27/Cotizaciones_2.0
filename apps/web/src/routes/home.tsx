@@ -1,7 +1,7 @@
 import { Bitcoin, Building2, Globe2, Landmark } from 'lucide-react';
 import { useBonos, useFx } from '../features/bonos/use-bonos';
-import { BonosCompact } from '../features/bonos/bonos-compact';
-import { FxStrip } from '../features/bonos/fx-strip';
+import { BonosBoard } from '../features/bonos/bonos-board';
+import { FxBoard } from '../features/bonos/fx-board';
 import { useCripto } from '../features/cripto/use-cripto';
 import { CriptoStrip } from '../features/cripto/cripto-strip';
 import { useIndices } from '../features/indices/use-indices';
@@ -12,14 +12,14 @@ import { QuoteTableCompact } from '../features/quotes/quote-table-compact';
 const BONOS_DASH_SYMBOLS = ['AL30', 'AL30D', 'GD30', 'GD30D', 'GD35', 'GD35D'];
 
 /**
- * Dashboard ultra-compacto y full-responsive.
+ * Dashboard panel-en-vivo — usa todo el viewport con tres bandas:
  *
- *  En lg+ el panel de cripto vive en el ticker marquee del AppShell, así que
- *  el dashboard se reduce a FX + Bonos + 4 paneles de acciones — todo entra
- *  en una pantalla típica 1080p.
+ *   1. Índices (full-width).
+ *   2. Bonos Argentinos + Dólar implícito (lg: 50/50).
+ *   3. 4 paneles de acciones — Merval, ADRs, S&P 500, CEDEARs (lg: 4 cols).
  *
- *  En mobile/tablet (< lg) mostramos CriptoStrip dentro del dashboard para
- *  no perder visibilidad cuando el ticker está oculto.
+ * En mobile/tablet (<lg) el ticker cripto del navbar está oculto, por eso
+ * acá insertamos un CriptoStrip antes de los paneles de acciones.
  */
 export function HomePage() {
   const bonos = useBonos();
@@ -34,23 +34,22 @@ export function HomePage() {
   return (
     <div className="space-y-3">
       <IndicesStrip data={indices.data} isLoading={indices.isLoading} />
-      <FxStrip data={fx.data} isLoading={fx.isLoading} />
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <BonosBoard
+          data={bonos.data}
+          isLoading={bonos.isLoading}
+          symbols={BONOS_DASH_SYMBOLS}
+        />
+        <FxBoard data={fx.data} isLoading={fx.isLoading} />
+      </div>
 
       {/* Cripto strip — solo mobile/tablet, en lg+ ya está el ticker arriba */}
       <section className="lg:hidden">
         <CriptoStrip data={cripto.data} isLoading={cripto.isLoading} />
       </section>
 
-      <BonosCompact data={bonos.data} isLoading={bonos.isLoading} symbols={BONOS_DASH_SYMBOLS} />
-
-      <section
-        className="grid justify-center gap-3"
-        style={{
-          // Tope superior por columna para que no se estiren en pantallas anchas
-          // y los cards queden con proporción más cuadrada (~340 × 280 ≈ 1.2:1).
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 340px))',
-        }}
-      >
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <QuoteTableCompact
           panel="merval"
           title="Merval"
@@ -91,7 +90,7 @@ export function HomePage() {
           limit={9}
           href="/acciones"
         />
-      </section>
+      </div>
     </div>
   );
 }

@@ -51,6 +51,8 @@ export function CriptoDataTable({ data, isLoading }: CriptoDataTableProps) {
         <span className="font-mono text-xs text-muted-foreground">{row.rank ?? '—'}</span>
       ),
       sortBy: (row) => row.rank ?? 9999,
+      mobileHidden: true,
+      mobileLabel: 'Rank',
     },
     {
       id: 'symbol',
@@ -89,6 +91,8 @@ export function CriptoDataTable({ data, isLoading }: CriptoDataTableProps) {
         </span>
       ),
       sortBy: (row) => row.marketCapUsd ?? 0,
+      mobileHidden: true,
+      mobileLabel: 'Market Cap',
     },
     {
       id: 'vol',
@@ -100,6 +104,8 @@ export function CriptoDataTable({ data, isLoading }: CriptoDataTableProps) {
         </span>
       ),
       sortBy: (row) => row.volume24hUsd ?? 0,
+      mobileHidden: true,
+      mobileLabel: 'Vol 24h',
     },
   ];
 

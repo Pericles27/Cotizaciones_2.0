@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: cotizaciones-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      - key: CACHE_TTL_SECONDS
+        value: "30"
+      - key: IOL_USERNAME
+        sync: false
+      - key: IOL_PASSWORD
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: API_KEY
+        sync: false

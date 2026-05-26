@@ -32,10 +32,23 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
-# Headers de seguridad básicos.
+# Headers de seguridad.
+#
+# Content-Security-Policy:
+#   - default-src 'self'          → solo recursos del mismo origen por defecto
+#   - script-src 'self'           → solo scripts propios (Vite los inlinea con hash si hace falta)
+#   - style-src 'self' 'unsafe-inline' → Tailwind genera estilos inline en algunos casos
+#   - img-src 'self' data:        → imágenes propias + data URIs (ej. favicon SVG inline)
+#   - connect-src 'self' https:   → fetch() solo a HTTPS (permite llamar a la API en Railway/Fly)
+#   - font-src 'self'             → fuentes solo del origen
+#   - frame-ancestors 'none'      → equivale a X-Frame-Options DENY pero más moderno
+#   - base-uri 'self'             → evita inyección de <base> maliciosas
+#   - form-action 'self'          → formularios solo al mismo origen
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
     Referrer-Policy        = "strict-origin-when-cross-origin"
     X-Frame-Options        = "DENY"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"

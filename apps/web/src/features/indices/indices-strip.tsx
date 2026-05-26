@@ -1,14 +1,33 @@
 import { Activity } from 'lucide-react';
 import type { IndexBoard, IndexQuote } from '@cotizaciones/types';
-import { Card, CardContent, ChangeBadge, Skeleton, cn } from '@cotizaciones/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  ChangeBadge,
+  Skeleton,
+  cn,
+} from '@cotizaciones/ui';
+import { MarketStatus } from '../../components/market-status';
+import { formatTime } from '../../lib/format';
 
-const REGION_LABEL: Record<IndexQuote['region'], string> = {
+const REGION_FLAG: Record<IndexQuote['region'], string> = {
   ar: '🇦🇷',
   us: '🇺🇸',
   br: '🇧🇷',
   eu: '🇪🇺',
   asia: '🌏',
-  commodity: '🛢️',
+  commodity: '⬢',
+};
+
+const REGION_TEXT: Record<IndexQuote['region'], string> = {
+  ar: 'text-celeste',
+  us: 'text-foreground',
+  br: 'text-positive',
+  eu: 'text-foreground',
+  asia: 'text-foreground',
+  commodity: 'text-dorado',
 };
 
 interface IndicesStripProps {
@@ -16,55 +35,69 @@ interface IndicesStripProps {
   isLoading: boolean;
 }
 
+const NUM = new Intl.NumberFormat('es-AR', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+  useGrouping: true,
+});
+
 /**
- * Strip horizontal con los índices clave (Merval, S&P 500, Dow, NASDAQ, IBOVespa).
- * Misma lógica visual que FxStrip pero sin el badge de mercado abierto / cerrado
- * (Yahoo Finance ya devuelve el último valor cuando los mercados están cerrados).
+ * Panel de índices — header con título + EN VIVO, contenido en una grilla
+ * de 8 columnas (2 / 4 / 8 según viewport) con flag, símbolo, valor y
+ * variación. Misma estética que el resto del dashboard.
  */
 export function IndicesStrip({ data, isLoading }: IndicesStripProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="flex flex-wrap items-center gap-x-6 gap-y-2 p-3">
+    <Card>
+      <CardHeader className="flex-row items-center justify-between space-y-0 px-4 pb-2 pt-3">
         <div className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-celeste" />
-          <span className="text-sm font-semibold">Índices</span>
+          <Activity className="h-3.5 w-3.5 text-celeste" />
+          <CardTitle className="text-sm">Índices</CardTitle>
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {data ? formatTime(data.fetchedAt) : '—'}
+          </span>
         </div>
-        <div className="flex flex-1 flex-wrap items-center gap-x-5 gap-y-2">
-          {isLoading || !data
-            ? Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-5 w-32" />)
-            : data.items.map((idx) => <IndexPill key={idx.symbol} q={idx} />)}
-        </div>
+        <MarketStatus stale={data?.stale} />
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 gap-x-4 gap-y-3 px-4 pb-3 pt-1 sm:grid-cols-4 lg:grid-cols-8">
+        {isLoading || !data
+          ? Array.from({ length: 8 }).map((_, i) => <IndexCellSkeleton key={i} />)
+          : data.items.slice(0, 8).map((idx) => <IndexCell key={idx.symbol} q={idx} />)}
       </CardContent>
     </Card>
   );
 }
 
-const COMPACT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2, useGrouping: true });
-
-function IndexPill({ q }: { q: IndexQuote }) {
+function IndexCell({ q }: { q: IndexQuote }) {
   return (
-    <div className="flex items-baseline gap-1.5">
-      <span className="text-xs" aria-hidden>
-        {REGION_LABEL[q.region]}
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-1 text-[10px]">
+        <span className="text-xs leading-none" aria-hidden>
+          {REGION_FLAG[q.region]}
+        </span>
+        <span
+          className={cn(
+            'font-semibold uppercase tracking-wider',
+            REGION_TEXT[q.region],
+          )}
+        >
+          {q.name}
+        </span>
+      </div>
+      <span className="font-mono text-xl font-bold leading-tight tabular-nums">
+        {NUM.format(q.last)}
       </span>
-      <span
-        className={cn(
-          'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase',
-          q.region === 'ar'
-            ? 'bg-celeste/15 text-celeste'
-            : q.region === 'us'
-              ? 'bg-primary/15 text-primary'
-              : q.region === 'commodity'
-                ? 'bg-dorado/15 text-dorado'
-                : 'bg-muted text-muted-foreground',
-        )}
-      >
-        {q.name}
-      </span>
-      <span className="font-mono text-base font-semibold tabular-nums">
-        {COMPACT.format(q.last)}
-      </span>
-      <ChangeBadge value={q.changePercent} className="px-1.5 py-0 text-[10px]" />
+      <ChangeBadge value={q.changePercent} className="self-start px-1.5 py-0 text-[10px]" />
+    </div>
+  );
+}
+
+function IndexCellSkeleton() {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Skeleton className="h-3 w-16" />
+      <Skeleton className="h-6 w-24" />
+      <Skeleton className="h-4 w-12" />
     </div>
   );
 }

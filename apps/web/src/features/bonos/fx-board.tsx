@@ -2,88 +2,69 @@ import { ArrowLeftRight } from 'lucide-react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Skeleton,
+  cn,
 } from '@cotizaciones/ui';
-import type { FxBoard } from '@cotizaciones/types';
+import type { FxBoard as FxBoardData } from '@cotizaciones/types';
 import { MarketStatus } from '../../components/market-status';
-import { formatPrice } from '../../lib/format';
+import { formatPrice, formatTime } from '../../lib/format';
 
-interface FxBoardCardProps {
-  data: FxBoard | undefined;
+interface FxBoardProps {
+  data: FxBoardData | undefined;
   isLoading: boolean;
 }
 
 /**
- * Reemplazo del viejo bloque "MEP / CCL" del proyecto original,
- * pero con tipografía monospace para los números, jerarquía clara
- * y estado de carga sin parpadeos.
+ * Panel de dólar implícito del dashboard — pares MEP / CCL en celdas
+ * verticales, alineadas con BonosBoard / IndicesStrip.
  */
-export function FxBoardCard({ data, isLoading }: FxBoardCardProps) {
+export function FxBoard({ data, isLoading }: FxBoardProps) {
   return (
     <Card className="h-full">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="flex items-center gap-2">
-            <ArrowLeftRight className="h-4 w-4 text-celeste" />
-            Dólar implícito
-          </CardTitle>
-          {data ? <MarketStatus marketOpen={data.marketOpen} stale={data.stale} /> : null}
+      <CardHeader className="flex-row items-center justify-between space-y-0 px-4 pb-2 pt-3">
+        <div className="flex items-center gap-2">
+          <ArrowLeftRight className="h-3.5 w-3.5 text-celeste" />
+          <CardTitle className="text-sm">Dólar implícito</CardTitle>
+          <span className="text-[11px] text-muted-foreground tabular-nums">
+            {data ? formatTime(data.fetchedAt) : '—'}
+          </span>
         </div>
-        <CardDescription>Calculado a partir de bonos soberanos en pesos vs. dólar.</CardDescription>
+        {data ? <MarketStatus marketOpen={data.marketOpen} stale={data.stale} /> : null}
       </CardHeader>
-      <CardContent className="space-y-6">
-        <FxGroup
-          title="MEP"
-          items={data?.items.filter((i) => i.kind === 'mep')}
-          isLoading={isLoading}
-        />
-        <FxGroup
-          title="CCL"
-          items={data?.items.filter((i) => i.kind === 'ccl')}
-          isLoading={isLoading}
-        />
+      <CardContent className="grid grid-cols-3 gap-x-3 gap-y-3 px-4 pb-3 pt-1 sm:grid-cols-5">
+        {isLoading || !data
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-5 w-20" />
+              </div>
+            ))
+          : data.items.map((fx) => (
+              <div
+                key={`${fx.kind}-${fx.pair ?? ''}`}
+                className="flex flex-col gap-0.5"
+              >
+                <div className="flex items-baseline gap-1 text-[10px] uppercase tracking-wider">
+                  <span
+                    className={cn(
+                      'font-semibold',
+                      fx.kind === 'mep' ? 'text-celeste' : 'text-dorado',
+                    )}
+                  >
+                    {fx.kind}
+                  </span>
+                  {fx.pair ? (
+                    <span className="text-muted-foreground">{fx.pair}</span>
+                  ) : null}
+                </div>
+                <span className="font-mono text-base font-bold leading-tight tabular-nums">
+                  {formatPrice(fx.value, 'ARS')}
+                </span>
+              </div>
+            ))}
       </CardContent>
     </Card>
-  );
-}
-
-function FxGroup({
-  title,
-  items,
-  isLoading,
-}: {
-  title: string;
-  items: FxBoard['items'] | undefined;
-  isLoading: boolean;
-}) {
-  return (
-    <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </h3>
-      <ul className="mt-2 space-y-1.5">
-        {isLoading || !items
-          ? Array.from({ length: 3 }).map((_, i) => (
-              <li key={i} className="flex items-center justify-between">
-                <Skeleton className="h-4 w-12" />
-                <Skeleton className="h-5 w-24" />
-              </li>
-            ))
-          : items.map((item) => (
-              <li
-                key={`${item.kind}-${item.pair}`}
-                className="flex items-baseline justify-between gap-3"
-              >
-                <span className="text-sm text-muted-foreground">{item.pair}</span>
-                <span className="font-mono text-lg font-semibold tabular-nums">
-                  {formatPrice(item.value, 'ARS')}
-                </span>
-              </li>
-            ))}
-      </ul>
-    </div>
   );
 }

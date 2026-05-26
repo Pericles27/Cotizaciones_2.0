@@ -66,6 +66,8 @@ export function QuotesDataTable({
         </span>
       ),
       sortBy: (row) => row.name ?? '',
+      mobileHidden: true,
+      mobileLabel: 'Nombre',
     },
     {
       id: 'last',
@@ -93,6 +95,8 @@ export function QuotesDataTable({
         </span>
       ),
       sortBy: (row) => row.volume ?? 0,
+      mobileHidden: true,
+      mobileLabel: 'Volumen',
     },
   ];
 

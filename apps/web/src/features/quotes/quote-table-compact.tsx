@@ -3,7 +3,6 @@ import { Star } from 'lucide-react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   ChangeBadge,
@@ -31,8 +30,11 @@ interface QuoteTableCompactProps {
 }
 
 /**
- * Card compacto para el dashboard — favorites primero, luego top N por |variación|.
- * Permite marcar / desmarcar favoritos con un click en la estrellita.
+ * Card compacto del dashboard — header de una línea (icono + título + hora
+ * + EN VIVO), fila de headers de columna y lista densa con favoritos primero.
+ *
+ * Pensado para apilar 4 cards en una grilla full-width sin perder densidad
+ * (≥ 9 filas visibles a 1080p).
  */
 export function QuoteTableCompact({
   panel,
@@ -51,65 +53,83 @@ export function QuoteTableCompact({
     ? sortPreferringFavorites(data.items, isFavorite).slice(0, limit)
     : null;
 
+  const timeLabel = data
+    ? data.marketOpen === false
+      ? `Cierre · ${formatTime(data.fetchedAt)}`
+      : formatTime(data.fetchedAt)
+    : '—';
+
   return (
     <Card className="flex h-full flex-col">
-      <CardHeader className="flex-row items-start justify-between space-y-0 pb-2">
-        <div className="space-y-0.5">
-          <CardTitle className="flex items-center gap-1.5 text-sm">
-            {Icon ? <Icon className="h-3.5 w-3.5 text-celeste" /> : null}
+      <CardHeader className="flex-row items-center justify-between space-y-0 px-3 pb-2 pt-3">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {Icon ? (
+            <Icon className="h-3.5 w-3.5 text-celeste shrink-0" />
+          ) : (
+            <Star className="h-3.5 w-3.5 fill-dorado text-dorado shrink-0" />
+          )}
+          <CardTitle className="text-sm">
             <Link to={href} className="hover:underline">
               {title}
             </Link>
           </CardTitle>
-          <CardDescription className="text-xs">
-            {isError
-              ? 'API sin respuesta'
-              : description
-                ? description
-                : data
-                  ? data.marketOpen === false
-                    ? `Cierre · ${formatTime(data.fetchedAt)}`
-                    : formatTime(data.fetchedAt)
-                  : 'Cargando…'}
-          </CardDescription>
+          <span className="text-[11px] text-muted-foreground tabular-nums truncate">
+            {isError ? 'API sin respuesta' : description ?? timeLabel}
+          </span>
         </div>
         {data ? <MarketStatus marketOpen={data.marketOpen} stale={data.stale} /> : null}
       </CardHeader>
-      <CardContent className="flex-1 px-2 pb-2">
-        <ul className="divide-y divide-border/50 text-xs">
+      <CardContent className="flex-1 px-3 pb-3 pt-0">
+        {/* Layout en 4 columnas: estrella | símbolo (izq) | precio (centro) | var% (der).
+            El precio queda en una columna 1fr con text-center → ocupa todo el
+            ancho disponible pero el número en sí sale centrado. */}
+        <div className="grid w-full grid-cols-[1rem_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span aria-hidden />
+          <span>Símbolo</span>
+          <span className="text-center">Precio</span>
+          <span className="text-right">Var%</span>
+        </div>
+        <ul className="divide-y divide-border/40 text-sm">
           {isLoading || !items
             ? Array.from({ length: limit }).map((_, i) => (
-                <li key={i} className="flex items-center justify-between gap-2 py-1.5 px-1">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-20" />
+                <li
+                  key={i}
+                  className="grid w-full grid-cols-[1rem_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-3 py-1.5"
+                >
+                  <Skeleton className="h-3.5 w-3.5" />
+                  <Skeleton className="h-3.5 w-14" />
+                  <Skeleton className="mx-auto h-3.5 w-20" />
                   <Skeleton className="h-4 w-14" />
                 </li>
               ))
-            : items.map((q) => (
-                <li
-                  key={q.symbol}
-                  className="flex items-center justify-between gap-2 py-1.5 px-1 hover:bg-muted/30 rounded"
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggle(q.symbol)}
-                    className="text-muted-foreground transition-colors hover:text-dorado"
-                    aria-label={isFavorite(q.symbol) ? 'Quitar de favoritos' : 'Marcar como favorito'}
+            : items.map((q) => {
+                const fav = isFavorite(q.symbol);
+                return (
+                  <li
+                    key={q.symbol}
+                    className="grid w-full grid-cols-[1rem_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-3 py-1.5 transition-colors hover:bg-muted/30"
                   >
-                    <Star
-                      className={cn(
-                        'h-3 w-3',
-                        isFavorite(q.symbol) && 'fill-dorado text-dorado',
-                      )}
+                    <button
+                      type="button"
+                      onClick={() => toggle(q.symbol)}
+                      className="text-muted-foreground transition-colors hover:text-dorado"
+                      aria-label={fav ? 'Quitar de favoritos' : 'Marcar como favorito'}
+                    >
+                      <Star
+                        className={cn('h-3.5 w-3.5', fav && 'fill-dorado text-dorado')}
+                      />
+                    </button>
+                    <span className="truncate font-mono font-medium">{q.symbol}</span>
+                    <span className="text-center font-mono tabular-nums">
+                      {formatPrice(q.last, q.currency)}
+                    </span>
+                    <ChangeBadge
+                      value={q.changePercent}
+                      className="px-1.5 py-0.5 text-[11px]"
                     />
-                  </button>
-                  <span className="flex-1 truncate font-mono font-medium">{q.symbol}</span>
-                  <span className="font-mono tabular-nums text-muted-foreground">
-                    {formatPrice(q.last, q.currency)}
-                  </span>
-                  <ChangeBadge value={q.changePercent} className="px-1.5 py-0 text-[10px]" />
-                </li>
-              ))}
+                  </li>
+                );
+              })}
         </ul>
       </CardContent>
     </Card>

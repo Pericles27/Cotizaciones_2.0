@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search } from 'lucide-react';
 import {
   Button,
@@ -30,6 +30,16 @@ export interface DataTableColumn<Row> {
   cellClassName?: string;
   /** Clases extra para el encabezado. */
   headerClassName?: string;
+  /**
+   * Si true, la columna se oculta en pantallas chicas (<md) y aparece dentro
+   * del detalle expandido al apretar el chevron en cada fila.
+   */
+  mobileHidden?: boolean;
+  /**
+   * Etiqueta corta usada en el detalle expandido en mobile (clave del par
+   * label/valor). Si no se define, se usa el `id` capitalizado.
+   */
+  mobileLabel?: string;
 }
 
 export interface DataTableFilter<Row> {
@@ -60,6 +70,13 @@ const PAGE_SIZES = [10, 25, 50] as const;
 
 /**
  * Tabla genérica con búsqueda, orden por columna y paginación.
+ *
+ * Responsive: las columnas marcadas con `mobileHidden` desaparecen del header
+ * y de las filas en pantallas chicas (<md). En su lugar aparece un chevron
+ * al final de cada fila que despliega un detalle con esos campos como pares
+ * label/valor — así en mobile la tabla se reduce a lo esencial (símbolo,
+ * precio, variación) y el resto se consulta on-demand.
+ *
  * Sin dependencias de TanStack Table — todo en useState/useMemo.
  */
 export function DataTable<Row>({
@@ -80,6 +97,14 @@ export function DataTable<Row>({
   const [page, setPage] = useState(0);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(
     () => new Set(filters?.filter((f) => f.defaultActive).map((f) => f.id) ?? []),
+  );
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+
+  const hasMobileHidden = useMemo(() => columns.some((c) => c.mobileHidden), [columns]);
+  /** Cantidad de columnas visibles en mobile (las no-mobileHidden + el chevron). */
+  const mobileColCount = useMemo(
+    () => columns.filter((c) => !c.mobileHidden).length + (hasMobileHidden ? 1 : 0),
+    [columns, hasMobileHidden],
   );
 
   const filtered = useMemo(() => {
@@ -130,6 +155,15 @@ export function DataTable<Row>({
       return next;
     });
     setPage(0);
+  };
+
+  const toggleExpanded = (key: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   };
 
   return (
@@ -210,10 +244,13 @@ export function DataTable<Row>({
                   <TableHead
                     key={col.id}
                     className={cn(
+                      // Padding más ajustado en mobile para que entren más datos.
+                      'px-2 sm:px-3',
                       col.headerClassName,
                       col.align === 'right' && 'text-right',
                       col.align === 'center' && 'text-center',
                       sortable && 'cursor-pointer select-none hover:text-foreground',
+                      col.mobileHidden && 'hidden md:table-cell',
                     )}
                     onClick={sortable ? () => toggleSort(col.id) : undefined}
                   >
@@ -235,6 +272,9 @@ export function DataTable<Row>({
                   </TableHead>
                 );
               })}
+              {hasMobileHidden ? (
+                <TableHead className="w-8 px-1 md:hidden" aria-label="" />
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -244,42 +284,107 @@ export function DataTable<Row>({
                     {columns.map((col) => (
                       <TableCell
                         key={col.id}
-                        className={cn(col.align === 'right' && 'text-right')}
+                        className={cn(
+                          'px-2 sm:px-3',
+                          col.align === 'right' && 'text-right',
+                          col.mobileHidden && 'hidden md:table-cell',
+                        )}
                       >
                         <Skeleton
                           className={cn('h-4', col.align === 'right' ? 'ml-auto w-24' : 'w-32')}
                         />
                       </TableCell>
                     ))}
+                    {hasMobileHidden ? (
+                      <TableCell className="w-8 px-1 md:hidden" />
+                    ) : null}
                   </TableRow>
                 ))
               : slice.length === 0
                 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={columns.length}
+                        colSpan={columns.length + (hasMobileHidden ? 1 : 0)}
                         className="py-10 text-center text-sm text-muted-foreground"
                       >
                         {emptyMessage}
                       </TableCell>
                     </TableRow>
                   )
-                : slice.map((row) => (
-                    <TableRow key={rowKey(row)}>
-                      {columns.map((col) => (
-                        <TableCell
-                          key={col.id}
-                          className={cn(
-                            col.cellClassName,
-                            col.align === 'right' && 'text-right',
-                            col.align === 'center' && 'text-center',
-                          )}
+                : slice.flatMap((row) => {
+                    const key = rowKey(row);
+                    const isExpanded = expanded.has(key);
+                    const out: React.ReactNode[] = [
+                      <TableRow
+                        key={key}
+                        className={cn(isExpanded && 'border-b-0 md:border-b')}
+                      >
+                        {columns.map((col) => (
+                          <TableCell
+                            key={col.id}
+                            className={cn(
+                              'px-2 sm:px-3',
+                              col.cellClassName,
+                              col.align === 'right' && 'text-right',
+                              col.align === 'center' && 'text-center',
+                              col.mobileHidden && 'hidden md:table-cell',
+                            )}
+                          >
+                            {col.cell(row)}
+                          </TableCell>
+                        ))}
+                        {hasMobileHidden ? (
+                          <TableCell className="w-8 px-1 text-right md:hidden">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpanded(key)}
+                              aria-expanded={isExpanded}
+                              aria-controls={`row-detail-${key}`}
+                              aria-label={isExpanded ? 'Ocultar detalle' : 'Mostrar detalle'}
+                              className={cn(
+                                'inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                                isExpanded && 'bg-accent text-foreground',
+                              )}
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  'h-4 w-4 transition-transform',
+                                  isExpanded && 'rotate-180',
+                                )}
+                              />
+                            </button>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>,
+                    ];
+                    if (hasMobileHidden && isExpanded) {
+                      const hiddenCols = columns.filter((c) => c.mobileHidden);
+                      out.push(
+                        <TableRow
+                          key={`${key}__detail`}
+                          className="border-b bg-muted/30 hover:bg-muted/30 md:hidden"
                         >
-                          {col.cell(row)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                          <TableCell
+                            id={`row-detail-${key}`}
+                            colSpan={mobileColCount}
+                            className="px-3 py-2"
+                          >
+                            <dl className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 text-xs">
+                              {hiddenCols.map((col) => (
+                                <Fragment key={col.id}>
+                                  <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                    {col.mobileLabel ?? col.id}
+                                  </dt>
+                                  <dd className="text-right">{col.cell(row)}</dd>
+                                </Fragment>
+                              ))}
+                            </dl>
+                          </TableCell>
+                        </TableRow>,
+                      );
+                    }
+                    return out;
+                  })}
           </TableBody>
         </Table>
       </div>
